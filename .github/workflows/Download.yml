@@ -1,0 +1,27 @@
+name: Download
+on:
+  workflow_dispatch:
+    inputs:
+      r1: { description: 'Download_Link|Save_Path', required: false, type: string }
+      r2: { description: 'Download_Link|Save_Path', required: false, type: string }
+      r3: { description: 'Download_Link|Save_Path', required: false, type: string }
+      r4: { description: 'Download_Link|Save_Path', required: false, type: string }
+      r5: { description: 'Download_Link|Save_Path', required: false, type: string }
+      r6: { description: 'Download_Link|Save_Path', required: false, type: string }
+      r7: { description: 'Download_Link|Save_Path', required: false, type: string }
+      r8: { description: 'Download_Link|Save_Path', required: false, type: string }
+      r9: { description: 'Download_Link|Save_Path', required: false, type: string }
+
+permissions: { contents: write }
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with: { fetch-depth: 0, token: "${{ secrets.GITHUB_TOKEN }}" }
+    - run: |
+        git config user.name "github-actions[bot]" && git config user.email "github-actions[bot]@users.noreply.github.com" && git pull --rebase origin main || true
+        for cfg in "${{ inputs.r1 }}" "${{ inputs.r2 }}" "${{ inputs.r3 }}" "${{ inputs.r4 }}" "${{ inputs.r5 }}" "${{ inputs.r6 }}" "${{ inputs.r7 }}" "${{ inputs.r8 }}" "${{ inputs.r9 }}"; do [ -z "$cfg" ] && continue; url="${cfg%%|*}"; dir="${cfg##*|}"; echo "→ $url → packages/$dir/"; mkdir -p "packages/$dir" && curl -fL -o "packages/$dir/${url##*/}" "$url"; done
+        git add -f packages/ && git diff --staged --quiet || git commit -m "$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M')" && git push --force-with-lease origin HEAD
+        

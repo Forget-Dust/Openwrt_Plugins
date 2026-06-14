@@ -1,0 +1,34 @@
+name: Build_Openwrt
+on:
+  workflow_dispatch:
+    inputs:
+      force_version:
+        description: "主版本号（如 24/ 25）"
+        required: false
+        default: "24"
+
+permissions: { contents: write }
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt update -y
+          sudo apt install -fy curl aria2
+          
+      - name: Fetch latest OpenWrt EFI image
+        run: |
+          set -euo pipefail
+          mirror="http://downloads.openwrt.org/releases"
+          download="aria2c -c -x 16 -s 999 --file-allocation=none --check-certificate=false"
+          MAJOR="${{ inputs.series }}"; MAJOR="${MAJOR:-24}"; case "$MAJOR" in 24|25) ;; *) echo "ERROR: series must be 24 or 25, got [$MAJOR]"; exit 1 ;; esac
+          
+          new_version=$(curl -fsSL "${mirror}" | grep -oE 'href="${MAJOR}\.[0-9]+\.[0-9]+/"' | sed 's/href="//;s/\/"//' | sort -t. -k1,1 -k2,2 -k3,3 -n -u | tail -1)
+          ${download} "${mirror}/${new_version}/targets/x86/64/openwrt-${new_version}-x86-64-generic-squashfs-combined-efi.img.gz" && gunzip *gz
+          
+          exit
